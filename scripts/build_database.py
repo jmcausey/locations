@@ -86,8 +86,12 @@ def main():
         download(BASE + filename, target)
 
     countries = countries_from(args.cache_dir / SUPPORT[0])
-    admin1 = admin1_from(args.cache_dir / SUPPORT[1])
-    admin2 = admin2_from(args.cache_dir / SUPPORT[2])
+    # Some source admin records refer to obsolete or nonstandard country codes.
+    # Keep only rows whose parent keys exist so foreign-key checks remain valid.
+    admin1 = {key: row for key, row in admin1_from(args.cache_dir / SUPPORT[1]).items()
+              if key[0] in countries}
+    admin2 = {key: row for key, row in admin2_from(args.cache_dir / SUPPORT[2]).items()
+              if (key[0], key[1]) in admin1}
     schema = Path(__file__).resolve().parents[1] / "schema" / "sqlite.sql"
     args.output.parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(args.output)
